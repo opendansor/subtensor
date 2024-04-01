@@ -493,48 +493,46 @@ pub fn finney_testnet_config() -> Result<ChainSpec, String> {
     ))
 }
 
-pub fn localnet_config() -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+pub fn development_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
-    // Give front-ends necessary data to present to users
-    let mut properties = sc_service::Properties::new();
-    properties.insert("tokenSymbol".into(), "TAO".into());
-    properties.insert("tokenDecimals".into(), 9.into());
-    properties.insert("ss58Format".into(), 13116.into());
-
-    Ok(ChainSpec::from_genesis(
-        // Name
-        "Bittensor",
-        // ID
-        "bittensor",
-        ChainType::Development,
-        move || {
-            localnet_genesis(
-                wasm_binary,
-                // Initial PoA authorities (Validators)
-                // aura | grandpa
-                vec![
-                    // Keys for debug
-                    authority_keys_from_seed("Alice"),
-                    authority_keys_from_seed("Bob"),
-                ],
-                // Pre-funded accounts
-                true,
-            )
-        },
-        // Bootnodes
-        vec![],
-        // Telemetry
-        None,
-        // Protocol ID
-        Some("bittensor"),
-        None,
-        // Properties
-        Some(properties),
-        // Extensions
-        None,
-    ))
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Development",
+		// ID
+		"dev",
+		ChainType::Development,
+		move || {
+			development_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				vec![authority_keys_from_seed("Alice")],
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Pre-funded accounts
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				true,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		None,
+		// Properties
+		None,
+		// Extensions
+		None,
+	))
 }
+
 
 fn localnet_genesis(
     wasm_binary: &[u8],
@@ -735,58 +733,34 @@ fn finney_genesis(
 }
 
 // Configure initial storage state for FRAME modules.
-fn stagenet_genesis(
-    wasm_binary: &[u8],
-    initial_authorities: Vec<(AuraId, GrandpaId)>,
-    _root_key: AccountId,
-    _endowed_accounts: Vec<AccountId>,
-    _enable_println: bool,
-    stakes: Vec<(AccountId, Vec<(AccountId, (u64, u16))>)>,
-    balances: Vec<(AccountId, u64)>,
-    balances_issuance: u64,
-) -> GenesisConfig {
-    GenesisConfig {
-        system: SystemConfig {
-            // Add Wasm runtime to storage.
-            code: wasm_binary.to_vec(),
-        },
-        balances: BalancesConfig {
-            // Configure endowed accounts with initial balance of 1 << 60.
-            //balances: balances.iter().cloned().map(|k| k).collect(),
-            balances: balances.iter().cloned().map(|k| k).collect(),
-        },
-        aura: AuraConfig {
-            authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-        },
-        grandpa: GrandpaConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.1.clone(), 1))
-                .collect(),
-        },
-        sudo: SudoConfig {
-            key: Some(
-                Ss58Codec::from_ss58check("5GpzQgpiAKHMWNSH3RN4GLf96GVTDct9QxYEFAY7LWcVzTbx")
-                    .unwrap(),
-            ),
-        },
-        transaction_payment: Default::default(),
-        subtensor_module: SubtensorModuleConfig {
-            stakes: stakes,
-            balances_issuance: balances_issuance,
-        },
-        triumvirate: TriumvirateConfig {
-            // Add initial authorities as collective members
-            members: Default::default(), //initial_authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
-            phantom: Default::default(),
-        },
-        triumvirate_members: TriumvirateMembersConfig {
-            members: Default::default(),
-            phantom: Default::default(),
-        },
-        senate_members: SenateMembersConfig {
-            members: Default::default(),
-            phantom: Default::default(),
-        },
-    }
+fn development_genesis(
+	wasm_binary: &[u8],
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	_enable_println: bool,
+) -> RuntimeGenesisConfig {
+	RuntimeGenesisConfig {
+		system: SystemConfig {
+			// Add Wasm runtime to storage.
+			code: wasm_binary.to_vec(),
+			..Default::default()
+		},
+		balances: BalancesConfig {
+			// Configure endowed accounts with initial balance of 1 << 60.
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+		},
+		aura: AuraConfig {
+			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+		},
+		grandpa: GrandpaConfig {
+			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
+			..Default::default()
+		},
+		sudo: SudoConfig {
+			// Assign network admin rights.
+			key: Some(root_key),
+		},
+		transaction_payment: Default::default(),
+	}
 }
