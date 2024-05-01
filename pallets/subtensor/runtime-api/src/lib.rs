@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 use alloc::vec::Vec;
+use pallet_subtensor::delegate_info::DelegateInfoLite;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // src/neuron_info.rs, src/subnet_info.rs, and src/delegate_info.rs
@@ -9,6 +10,10 @@ sp_api::decl_runtime_apis! {
         fn get_delegates() -> Vec<u8>;
         fn get_delegate( delegate_account_vec: Vec<u8> ) -> Vec<u8>;
         fn get_delegated( delegatee_account_vec: Vec<u8> ) -> Vec<u8>;
+
+
+        fn get_delegates_lite() -> Vec<DelegateInfoLite>;
+        fn get_delegate_lite( delegate_account_vec: Vec<u8> ) -> DelegateInfoLite;
     }
 
     pub trait NeuronInfoRuntimeApi {

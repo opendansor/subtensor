@@ -8276,12 +8276,14 @@ dependencies = [
 name = "subtensor-custom-rpc"
 version = "0.0.2"
 dependencies = [
+ "frame-system",
  "jsonrpsee",
  "pallet-subtensor",
  "parity-scale-codec",
  "serde",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-rpc",
  "sp-runtime",
  "subtensor-custom-rpc-runtime-api",
@@ -8292,9 +8294,11 @@ name = "subtensor-custom-rpc-runtime-api"
 version = "0.0.2"
 dependencies = [
  "frame-support",
+ "frame-system",
  "pallet-subtensor",
  "serde",
  "sp-api",
+ "sp-core",
 ]
 
 [[package]]

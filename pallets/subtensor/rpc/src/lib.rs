@@ -5,6 +5,7 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
+use pallet_subtensor::delegate_info::DelegateInfoLite;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
@@ -32,7 +33,17 @@ pub trait SubtensorCustomApi<BlockHash> {
         delegatee_account_vec: Vec<u8>,
         at: Option<BlockHash>,
     ) -> RpcResult<Vec<u8>>;
+    #[method(name = "delegateInfo_getDelegatesLite")]
+    fn get_delegates_lite(&self, at: Option<BlockHash>) -> RpcResult<Vec<DelegateInfoLite>>;
 
+    #[method(name = "delegateInfo_getDelegateLite")]
+    fn get_delegate_lite(
+        &self,
+        delegate_account_vec: Vec<u8>,
+        at: Option<BlockHash>,
+    ) -> RpcResult<DelegateInfoLite>;
+    // #[method(name = "delegateInfo_getDelegatedLite")]
+    // fn get_delegated_lite(&self, delegatee_account_vec: Vec<u8>, at: Option<BlockHash>) -> RpcResult<Vec<u8>>;
     #[method(name = "neuronInfo_getNeuronsLite")]
     fn get_neurons_lite(&self, netuid: u16, at: Option<BlockHash>) -> RpcResult<Vec<u8>>;
     #[method(name = "neuronInfo_getNeuronLite")]
@@ -275,4 +286,54 @@ where
             .into()
         })
     }
+
+    fn get_delegates_lite(
+        &self,
+        at: Option<<Block as BlockT>::Hash>,
+    ) -> RpcResult<Vec<DelegateInfoLite>> {
+        let api = self.client.runtime_api();
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+        api.get_delegates_lite(at).map_err(|e| {
+            CallError::Custom(ErrorObject::owned(
+                Error::RuntimeError.into(),
+                "Unable to get delegates info.",
+                Some(e.to_string()),
+            ))
+            .into()
+        })
+    }
+
+    fn get_delegate_lite(
+        &self,
+        delegate_account_vec: Vec<u8>,
+        at: Option<<Block as BlockT>::Hash>,
+    ) -> RpcResult<DelegateInfoLite> {
+        let api = self.client.runtime_api();
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+        api.get_delegate_lite(at, delegate_account_vec)
+            .map_err(|e| {
+                CallError::Custom(ErrorObject::owned(
+                    Error::RuntimeError.into(),
+                    "Unable to get delegate info.",
+                    Some(e.to_string()),
+                ))
+                .into()
+            })
+    }
+
+    // fn get_delegated_lite_dec(&self, delegatee_account_vec: Vec<u8>, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Vec<u8>> {
+    //     let api = self.client.runtime_api();
+    //     let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+    //     api.get_delegated_lite(at, delegatee_account_vec).map_err(|e| {
+    //         CallError::Custom(ErrorObject::owned(
+    //             Error::RuntimeError.into(),
+    //             "Unable to get delegated info.",
+    //             Some(e.to_string()),
+    //         ))
+    //         .into()
+    //     })
+    // }
 }

@@ -23,6 +23,7 @@ use frame_support::{
 use frame_system::{EnsureNever, EnsureRoot, RawOrigin};
 
 use pallet_registry::CanRegisterIdentity;
+use scale_info::prelude::string::String;
 use scale_info::TypeInfo;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
@@ -69,6 +70,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 // Subtensor module
 pub use pallet_subtensor;
+use pallet_subtensor::delegate_info::DelegateInfoLite;
 
 // An index to a block.
 pub type BlockNumber = u32;
@@ -1448,6 +1450,25 @@ impl_runtime_apis! {
         fn get_delegated(delegatee_account_vec: Vec<u8>) -> Vec<u8> {
             let result = SubtensorModule::get_delegated(delegatee_account_vec);
             result.encode()
+        }
+
+        fn get_delegates_lite() -> Vec<DelegateInfoLite> {
+            let result = SubtensorModule::get_delegates_lite();
+            result
+        }
+
+        fn get_delegate_lite(delegate_account_vec: Vec<u8>) -> DelegateInfoLite {
+            let result = SubtensorModule::get_delegate_lite(delegate_account_vec);
+            result.unwrap_or(DelegateInfoLite {
+                delegate_ss58: String::new(),
+                take: 0,
+                nominators: 0,
+                owner_ss58: String::new(),
+                registrations: Vec::new(),
+                validator_permits: Vec::new(),
+                return_per_1000: 0,
+                total_daily_return: 0,
+            })
         }
     }
 

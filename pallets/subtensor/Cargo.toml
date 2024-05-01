@@ -43,7 +43,8 @@ substrate-fixed = { git = 'https://github.com/encointer/substrate-fixed.git', ta
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 ndarray = { version = "0.15.0", default-features = false }
-hex = { version = "0.4", default-features = false }
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+
 
 # Used for sudo decentralization
 pallet-collective = { version = "4.0.0-dev", default-features = false, path = "../collective" }
