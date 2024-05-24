@@ -215,7 +215,8 @@ impl<T: Config> Pallet<T> {
             if last_set_weights == 0 {
                 return true;
             } // (Storage default) Never set weights.
-            return (current_block - last_set_weights) >= Self::get_weights_set_rate_limit(netuid);
+            return current_block.saturating_sub(last_set_weights)
+                >= Self::get_weights_set_rate_limit(netuid);
         }
         // --- 3. Non registered peers cant pass.
         false
@@ -288,14 +289,17 @@ impl<T: Config> Pallet<T> {
         false
     }
 
-    // Implace normalizes the passed positive integer weights so that they sum to u16 max value.
+    #[allow(clippy::arithmetic_side_effects)]
+    /// Returns normalized the passed positive integer weights so that they sum to u16 max value.
     pub fn normalize_weights(mut weights: Vec<u16>) -> Vec<u16> {
         let sum: u64 = weights.iter().map(|x| *x as u64).sum();
         if sum == 0 {
             return weights;
         }
         weights.iter_mut().for_each(|x| {
-            *x = (*x as u64 * u16::max_value() as u64 / sum) as u16;
+            *x = (*x as u64)
+                .saturating_mul(u16::max_value() as u64)
+                .saturating_div(sum) as u16;
         });
         weights
     }

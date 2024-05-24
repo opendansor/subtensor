@@ -3,7 +3,7 @@ use frame_support::pallet_prelude::{DispatchResult, DispatchResultWithPostInfo};
 use frame_support::storage::IterableStorageDoubleMap;
 use sp_core::{Get, H256, U256};
 use sp_io::hashing::{keccak_256, sha2_256};
-use sp_runtime::MultiAddress;
+use sp_runtime::{MultiAddress, Saturating};
 use system::pallet_prelude::BlockNumberFor;
 
 const LOG_TARGET: &str = "runtime::subtensor::registration";
@@ -76,7 +76,7 @@ impl<T: Config> Pallet<T> {
         // --- 4. Ensure we are not exceeding the max allowed registrations per interval.
         ensure!(
             Self::get_registrations_this_interval(netuid)
-                < Self::get_target_registrations_per_interval(netuid) * 3,
+                < Self::get_target_registrations_per_interval(netuid).saturating_mul(3),
             Error::<T>::TooManyRegistrationsThisInterval
         );
 
@@ -145,9 +145,9 @@ impl<T: Config> Pallet<T> {
         }
 
         // --- 14. Record the registration and increment block and interval counters.
-        BurnRegistrationsThisInterval::<T>::mutate(netuid, |val| *val += 1);
-        RegistrationsThisInterval::<T>::mutate(netuid, |val| *val += 1);
-        RegistrationsThisBlock::<T>::mutate(netuid, |val| *val += 1);
+        BurnRegistrationsThisInterval::<T>::mutate(netuid, |val| val.saturating_inc());
+        RegistrationsThisInterval::<T>::mutate(netuid, |val| val.saturating_inc());
+        RegistrationsThisBlock::<T>::mutate(netuid, |val| val.saturating_inc());
         Self::increase_rao_recycled(netuid, Self::get_burn_as_u64(netuid));
 
         // --- 15. Deposit successful event.
@@ -258,7 +258,7 @@ impl<T: Config> Pallet<T> {
         // --- 5. Ensure we are not exceeding the max allowed registrations per interval.
         ensure!(
             Self::get_registrations_this_interval(netuid)
-                < Self::get_target_registrations_per_interval(netuid) * 3,
+                < Self::get_target_registrations_per_interval(netuid).saturating_mul(3),
             Error::<T>::TooManyRegistrationsThisInterval
         );
 
@@ -276,7 +276,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::InvalidWorkBlock
         );
         ensure!(
-            current_block_number - block_number < 3,
+            current_block_number.saturating_sub(block_number) < 3,
             Error::<T>::InvalidWorkBlock
         );
 
@@ -337,9 +337,9 @@ impl<T: Config> Pallet<T> {
         }
 
         // --- 12. Record the registration and increment block and interval counters.
-        POWRegistrationsThisInterval::<T>::mutate(netuid, |val| *val += 1);
-        RegistrationsThisInterval::<T>::mutate(netuid, |val| *val += 1);
-        RegistrationsThisBlock::<T>::mutate(netuid, |val| *val += 1);
+        POWRegistrationsThisInterval::<T>::mutate(netuid, |val| val.saturating_inc());
+        RegistrationsThisInterval::<T>::mutate(netuid, |val| val.saturating_inc());
+        RegistrationsThisBlock::<T>::mutate(netuid, |val| val.saturating_inc());
 
         // --- 13. Deposit successful event.
         log::info!(
@@ -375,7 +375,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::InvalidWorkBlock
         );
         ensure!(
-            current_block_number - block_number < 3,
+            current_block_number.saturating_sub(block_number) < 3,
             Error::<T>::InvalidWorkBlock
         );
 
@@ -439,7 +439,7 @@ impl<T: Config> Pallet<T> {
                 Self::get_neuron_block_at_registration(netuid, neuron_uid_i);
             #[allow(clippy::comparison_chain)]
             if min_score == pruning_score {
-                if current_block - block_at_registration < immunity_period {
+                if current_block.saturating_sub(block_at_registration) < immunity_period {
                     //neuron is in immunity period
                     if min_score_in_immunity_period > pruning_score {
                         min_score_in_immunity_period = pruning_score;
@@ -451,7 +451,7 @@ impl<T: Config> Pallet<T> {
             }
             // Find min pruning score.
             else if min_score > pruning_score {
-                if current_block - block_at_registration < immunity_period {
+                if current_block.saturating_sub(block_at_registration) < immunity_period {
                     //neuron is in immunity period
                     if min_score_in_immunity_period > pruning_score {
                         min_score_in_immunity_period = pruning_score;
@@ -588,7 +588,7 @@ impl<T: Config> Pallet<T> {
         let mut nonce: u64 = start_nonce;
         let mut work: H256 = Self::create_seal_hash(block_number, nonce, hotkey);
         while !Self::hash_meets_difficulty(&work, difficulty) {
-            nonce += 1;
+            nonce.saturating_inc();
             work = Self::create_seal_hash(block_number, nonce, hotkey);
         }
         let vec_work: Vec<u8> = Self::hash_to_vec(work);
@@ -622,8 +622,9 @@ impl<T: Config> Pallet<T> {
             Error::<T>::AlreadyRegistered
         );
 
-        weight
-            .saturating_accrue(T::DbWeight::get().reads((TotalNetworks::<T>::get() + 1u16) as u64));
+        weight.saturating_accrue(
+            T::DbWeight::get().reads((TotalNetworks::<T>::get().saturating_add(1)) as u64),
+        );
 
         let swap_cost = 1_000_000_000u64;
         ensure!(

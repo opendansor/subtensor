@@ -12,6 +12,7 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{bounded_vec, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::Saturating;
 use std::env;
 
 // The URL for the telemetry server.
@@ -119,7 +120,7 @@ pub fn finney_mainnet_config() -> Result<ChainSpec, String> {
         let key_account = sp_runtime::AccountId32::from(key);
 
         processed_balances.push((key_account, *amount));
-        balances_issuance += *amount;
+        balances_issuance.saturating_accrue(*amount);
     }
 
     // Give front-ends necessary data to present to users
@@ -298,7 +299,7 @@ pub fn finney_testnet_config() -> Result<ChainSpec, String> {
         let key_account = sp_runtime::AccountId32::from(key);
 
         processed_balances.push((key_account, *amount));
-        balances_issuance += *amount;
+        balances_issuance.saturating_accrue(*amount);
     }
 
     // Give front-ends necessary data to present to users
