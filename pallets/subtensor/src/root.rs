@@ -155,11 +155,13 @@ impl<T: Config> Pallet<T> {
             I96F32::from_num(1.0)
                 .checked_div(
                     I96F32::from_num(1.0)
-                        .checked_sub(total_issuance)
-                        .ok_or("Logarithm calculation failed")?
-                        .checked_div(
-                            I96F32::from_num(2.0)
-                                .saturating_mul(I96F32::from_num(10_500_000_000_000_000.0)),
+                        .checked_sub(
+                            total_issuance
+                                .checked_div(
+                                    I96F32::from_num(2.0)
+                                        .saturating_mul(I96F32::from_num(10_500_000_000_000_000.0)),
+                                )
+                                .ok_or("Logarithm calculation failed")?,
                         )
                         .ok_or("Logarithm calculation failed")?,
                 )
@@ -951,24 +953,24 @@ impl<T: Config> Pallet<T> {
     }
 
     #[allow(clippy::arithmetic_side_effects)]
-    /// This function calculates the lock cost for a network based on the last lock amount, minimum lock cost, last lock block, and current block.
-    /// The lock cost is calculated using the formula:
-    /// lock_cost = (last_lock * mult) - (last_lock / lock_reduction_interval) * (current_block - last_lock_block)
-    /// where:
-    /// - last_lock is the last lock amount for the network
-    /// - mult is the multiplier which increases lock cost each time a registration occurs
-    /// - last_lock_block is the block number at which the last lock occurred
-    /// - lock_reduction_interval the number of blocks before the lock returns to previous value.
-    /// - current_block is the current block number
-    /// - DAYS is the number of blocks in a day
-    /// - min_lock is the minimum lock cost for the network
-    ///
-    /// If the calculated lock cost is less than the minimum lock cost, the minimum lock cost is returned.
-    ///
-    /// # Returns:
-    ///  * 'u64':
-    ///     - The lock cost for the network.
-    ///
+    // This function calculates the lock cost for a network based on the last lock amount, minimum lock cost, last lock block, and current block.
+    // The lock cost is calculated using the formula:
+    // lock_cost = (last_lock * mult) - (last_lock / lock_reduction_interval) * (current_block - last_lock_block)
+    // where:
+    // - last_lock is the last lock amount for the network
+    // - mult is the multiplier which increases lock cost each time a registration occurs
+    // - last_lock_block is the block number at which the last lock occurred
+    // - lock_reduction_interval the number of blocks before the lock returns to previous value.
+    // - current_block is the current block number
+    // - DAYS is the number of blocks in a day
+    // - min_lock is the minimum lock cost for the network
+    //
+    // If the calculated lock cost is less than the minimum lock cost, the minimum lock cost is returned.
+    //
+    // # Returns:
+    //  * 'u64':
+    //     - The lock cost for the network.
+    //
     pub fn get_network_lock_cost() -> u64 {
         let last_lock = Self::get_network_last_lock();
         let min_lock = Self::get_network_min_lock();
