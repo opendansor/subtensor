@@ -796,7 +796,7 @@ impl<T: Config> Pallet<T> {
         NetworkModality::<T>::insert(netuid, 0);
 
         // --- 5. Increase total network count.
-        TotalNetworks::<T>::mutate(|n| n.saturating_dec());
+        TotalNetworks::<T>::mutate(|n| n.saturating_inc());
 
         // --- 6. Set all default values **explicitly**.
         Self::set_network_registration_allowed(netuid, true);
