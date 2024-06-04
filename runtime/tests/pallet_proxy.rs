@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use frame_support::{assert_ok, traits::InstanceFilter, BoundedVec};
 use node_subtensor_runtime::{
     AccountId, BalancesCall, BuildStorage, Proxy, ProxyType, Runtime, RuntimeCall, RuntimeEvent,
