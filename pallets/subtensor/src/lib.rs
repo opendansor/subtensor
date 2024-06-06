@@ -1148,7 +1148,7 @@ pub mod pallet {
                     Stake::<T>::insert(hotkey.clone(), coldkey.clone(), stake);
 
                     next_uid = next_uid.checked_add(1).expect(
-                        "should not have total number of hotkey accounts larger than u16::MAX",
+                        "genesis state should not have a total number of hotkey accounts larger than u16::MAX",
                     );
                 }
             }
